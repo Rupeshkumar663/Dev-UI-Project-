@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose"
+import bcrypt from "bcrypt"
 const userSchema=mongoose.Schema({
     username:{
         type:String,
@@ -44,4 +45,16 @@ const userSchema=mongoose.Schema({
     }
 
 },{timeStamps:true})
+ userSchema.pre("save",async function(next){
+ if(this.isModified("password")){
+   this.password=bcrypt.hash(this.paassword)
+   next();
+  }
+   next();
+})
 export const User=mongoose.model("User",userSchema)
+
+asserts
+
+//this.password=Rupesh123@
+//this.password=bcrypt.hash(this.paassword)=$$$$$$JM(*U(*$#(uhwrfgeivg0erlgi)))
