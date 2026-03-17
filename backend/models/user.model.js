@@ -55,19 +55,32 @@ const userSchema=mongoose.Schema({
 })
 
 userSchema.methods.generateAccessToken=function (){
-    jwt.sign(
+    return jwt.sign(
         {
-        _id:this._id,
-        email:this.email,
-        username:this.username,
-        fullname:this.fullname,
+            _id:this._id,
+            email:this.email,
+            username:this.username,
+            fullname:this.fullname
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expireIn:process.env.ACCESS_TOKEN_EXPIRY
         }
     )
 }
-userSchema.methods.generateRefreshToken=function (){}
+
+userSchema.methods.generateRefreshToken=function (){
+    return jwt.sign(
+        {
+            _id:this._id,
+            email:this.email,
+            username:this.username,
+            fullname:this.fullname
+        },
+        process.env.REFRESH_tOKEN_SECRET,
+        {
+            expireIn:process.env.REFRESH_tOKEN_EXPIRY
+        }
+    )
+}
 export const User=mongoose.model("User",userSchema)
-
-
-
-//this.password=Rupesh123@
-//this.password=bcrypt.hash(this.paassword)=$$$$$$JM(*U(*$#(uhwrfgeivg0erlgi)))
