@@ -5,8 +5,7 @@ import fs from "fs"
         api_key:process.env.CLOUDINARY_API_KEY, 
         api_secret:process.env.CLOUDINARY_API_SECRET
     });
-
-    const uploadCloudinary=async()=>{
+    const uploadCloudinary=async(localFilepath)=>{
         try{
             if(!localFilepath)
                    return ;
@@ -14,7 +13,8 @@ import fs from "fs"
            const response=await cloudinary.uploader.upload(localFilepath,{
                  resource_type:"auto"
             });
-            console.log("file is uploaded on cloudinary",response.url);
+          if(response)
+            fs.unlinkSync(localFilepath);
            return response;
             
         } catch(error){
@@ -22,3 +22,5 @@ import fs from "fs"
              return null;
         }
     }
+
+export default uploadCloudinary

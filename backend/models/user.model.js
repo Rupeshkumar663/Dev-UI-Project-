@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose"
 import bcrypt from "bcrypt"
-import {generateAccessToken,generateRefreshToken} from "jsonwebtoken"
+import jwt from "jsonwebtoken"
 const userSchema=mongoose.Schema({
     username:{
         type:String,
@@ -34,7 +34,7 @@ const userSchema=mongoose.Schema({
       type:Schema.Types.ObjectId,
       ref:"Video",
     },
-    paassword:{
+    password:{
          type:String,
         required:true,
         unique:true,
@@ -42,19 +42,17 @@ const userSchema=mongoose.Schema({
         trim:true,
     },
     refreshToken:{
-        type:string
+        type:String
     }
 
-},{timeStamps:true})
- userSchema.pre("save",async function(next){
- if(this.isModified("password")){
-   this.password=bcrypt.hash(this.paassword)
-   next();
-  }
-   next();
-})
+},{timestamps:true})
+  userSchema.pre("save", async function () {
+  if(!this.isModified("password")) 
+    return;
+  this.password=await bcrypt.hash(this.password,10);
+ });
 
-userSchema.methods.generateAccessToken=function (){
+userSchema.methods.generateAccessToken=function(){
     return jwt.sign(
         {
             _id:this._id,
@@ -68,7 +66,6 @@ userSchema.methods.generateAccessToken=function (){
         }
     )
 }
-
 userSchema.methods.generateRefreshToken=function (){
     return jwt.sign(
         {
@@ -79,7 +76,7 @@ userSchema.methods.generateRefreshToken=function (){
         },
         process.env.REFRESH_tOKEN_SECRET,
         {
-            expireIn:process.env.REFRESH_tOKEN_EXPIRY
+            expiresIn:process.env.REFRESH_TOKEN_EXPIRY
         }
     )
 }
