@@ -258,3 +258,58 @@ export const updateuserCoverImage=async(req,res)=>{
     return res.status(200).json({meesage:"server Issue",error})
    }
 }
+
+export const getUserChannelProfile=async(req,res)=>{
+  const {username}=req.params;
+  if(!username){
+    return res.status(400).json({message:"username is missing"});
+  }
+  const channel=User.aggregate([
+    {
+      $match:{
+        username:username
+      }
+    },{
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"channel",
+        as:"subscribers"
+      }
+    },
+    {
+      $lookup:{
+        from:"subscriptions",
+        localField:"_id",
+        foreignField:"subscriber",
+        as:"subscribed"
+      }
+    },{
+       $addField:{
+         subscribersCount:{
+           $size:"subscribers"
+         },
+         ChannelSubscribedCount:{
+          $size:"subscribed"
+         },
+         isSubscribed:{
+           $cond:{
+            if:{$in:[req.user?._id,"$subscribers.subscribed"]}
+           }
+         }
+       }
+    },
+    {
+        $project:{
+          fullname:1,
+          username:1,
+          subscribersCount:1,
+          ChannelSubscribedCount:1,
+          coverImage:1,
+          avatar:1,
+          isSubscribed:1,
+        }
+    }
+  ])
+    return res.status(200).json({message:channel[0],"channel profile fetched successfully"})
+}
