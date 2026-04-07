@@ -313,3 +313,40 @@ export const getUserChannelProfile=async(req,res)=>{
   ])
     return res.status(200).json({message:channel[0],"channel profile fetched successfully"})
 }
+
+export const getWatchHistory=async(req,res)=>{
+  const Watch=await User.aggregate([
+    {
+      $match:{
+       _id:req.user._id
+      }
+    },{
+      $lookup:{
+        from:"videos",
+        localField:"videoFile",
+        foreignField:"_id",
+        as:"WatchHistory",
+        pipeline:[
+          {
+            $lookup:{
+              from:"users",
+              localField:"owner",
+              foreignField:"_id",
+              as:"owner",
+              pipeline:[
+                {
+                  $project:{
+                    fullname:1,
+                    username:1,
+                    avatar:1,
+
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }])
+    return res.status(200).json({message:Watch[0],"watch histroy fetched successfully"});
+}
