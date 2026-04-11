@@ -1,6 +1,10 @@
 import { User } from "../models/user.model.js"
 import uploadCloudinary from "../db/cloudinary.js"
 import jwt from "jsonwebtoken"
+import { getCache, setCache } from "../services/cache.service.js"
+import { addToList, getList, popFromList } from "../services/list.service.js";
+import { addJob, processJob } from "../services/queue.service.js";
+
 const generateAccessAndRefreshTokens=async(userId)=>{
   try{
      const user=await User.findById(userId)
@@ -176,7 +180,7 @@ export const refreshaccessToken=async(req,res)=>{
     return res.status(200).json({message:"Invalid password",error})
    }
  }
-
+/*
  export const getCurrentUser=async(req,res)=>{
   try{
      const user=req.user
@@ -185,7 +189,7 @@ export const refreshaccessToken=async(req,res)=>{
      return res.status(200).json({message:"current user not fetched ",error})
   }
  }
-
+*/
 export const updateaccountDetails=async(req,res)=>{
   try{
     const {fullName,email}=req.body
@@ -350,3 +354,61 @@ export const getWatchHistory=async(req,res)=>{
     }])
     return res.status(200).json({message:Watch[0],"watch histroy fetched successfully"});
 }
+
+export const getcurrentUser=async(req,res)=>{
+  try{
+    const userId=req.user._id;
+    const cacheKey=`user:${userId}`;//cachekey=123
+    // Check Redis-------------
+    const cachedUser=await getCache(cacheKey);
+    if(cachedUser){
+      console.log("Cache HIT");
+      return res.status(200).json({source:"cache",data:cachedUser});
+    }
+    console.log("Cache MISS");
+    //DB Call------------------
+    const user=await User.findById(userId).select("-password -refreshToken");
+    if(!user){
+      return res.status(404).json({message:"User not found" });
+    }
+  //Store in Redis (TTL 5 min)
+    await setCache(cacheKey,user,300);
+    return res.status(200).json({source:"database",data:user});
+  } catch(error){
+    return res.status(500).json({message:"Error fetching user",error: error.message,});
+   }
+};
+
+
+// Add item to list-------------------
+export const addListData=async(req,res)=>{
+  const {value}=req.body;
+  await addToList("myList",value);
+  res.json({ message:"Added to list"});
+};
+// Get full list----------------
+export const getListData=async(req,res)=>{
+  const data=await getList("myList");
+  res.json({data});
+};
+
+// Remove from list------------------
+export const popListData=async(req,res)=>{
+  const data=await popFromList("myList");
+  res.json({removed:data});
+};
+
+// ---------- QUEUE ----------
+export const addQueueJob=async(req,res)=>{
+  const { job }=req.body;
+  await addJob("emailQueue",job);
+  res.json({message:"Job added"});
+};
+// Process job-------------------
+export const processQueueJob=async(req,res)=>{
+  const job=await processJob("emailQueue");
+  if(!job){
+    return res.json({message:"No jobs" });
+  }
+  res.json({processed:job});
+};
