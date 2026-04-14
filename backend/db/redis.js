@@ -12,9 +12,7 @@ export const connectRedis=async()=>{
             console.log("redis url missing")
             process.exit(1)
         }
-        redisClient=createClient({
-            url:REDIS_URL
-        })
+        createClient({url:REDIS_URL})
         
         redisClient.on("error",(error)=>{
          console.error("Redis Error:",error);
